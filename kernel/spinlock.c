@@ -2,6 +2,8 @@
 
 #include "spinlock.h"
 #include "riscv.h"
+#include "defs.h"
+#include "proc.h"
 
 void initlock(struct spinlock *lk, char *name)
 {
@@ -106,6 +108,6 @@ void pop_off(void)
     c->noff -= 1;
     if (c->noff == 0 && c->intena)
     {
-        intr_on()
+        intr_on();
     }
 }

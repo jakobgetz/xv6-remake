@@ -30,4 +30,6 @@ SECTIONS {
         *(.sbss .sbss.*)
         *(.bss .bss.*)
     }
+
+    PROVIDE(end = .);
 }

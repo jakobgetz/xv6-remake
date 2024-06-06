@@ -332,3 +332,13 @@ typedef u64 *pagetable_t; // 512 PTEs
 #endif // __ASSEMBLER__
 
 #define PGSIZE 4096 // bytes per page
+#define PGSHIFT 12  // bits of offset within a page
+
+#define PGROUNDUP(sz) (((sz) + PGSIZE - 1) & ~(PGSIZE - 1))
+#define PGROUNDDOWN(a) (((a)) & ~(PGSIZE - 1))
+
+// one beyond the highest possible virtual address.
+// MAXVA is actually one bit less than the max allowd by
+// Sv39, to avoid having to sign-extend virtual addresses
+// that have the high bit set.
+#define MAXVA (1L << (9 + 9 + 9 + 12 - 1))
