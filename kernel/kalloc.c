@@ -81,3 +81,14 @@ void *kalloc(void)
     }
     return (void *)r;
 }
+
+// Free user memory pages,
+// then free page-table pages.
+void uvmfree(pagetable_t pagetable, u64 sz)
+{
+    if (sz > 0)
+    {
+        uvmunmap(pagetable, 0, PGROUNDUP(sz) / PGSIZE, 1);
+    }
+    freewalk(pagetable);
+}

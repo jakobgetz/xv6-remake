@@ -76,7 +76,7 @@ uservec:
     # make tp hold the current hartid, from p->trapframe->kernel_hartid
     ld tp, 32(a0)
 
-    # load the addres of usertrap(), from p->trapframe->kernel_trap
+    # load the address of usertrap(), from p->trapframe->kernel_trap
     ld t0, 16(a0)
 
     # fetch the kernel page table address, from p->trapframe->kernel_satp.

@@ -1,22 +1,22 @@
 // Saved registers for kernel context switches.
 struct context
 {
-    u64 ra;
-    u64 sp;
+    /*   0 */ u64 ra;
+    /*   8 */ u64 sp;
 
     // callee-saved
-    u64 s0;
-    u64 s1;
-    u64 s2;
-    u64 s3;
-    u64 s4;
-    u64 s5;
-    u64 s6;
-    u64 s7;
-    u64 s8;
-    u64 s9;
-    u64 s10;
-    u64 s11;
+    /*   16 */ u64 s0;
+    /*   24 */ u64 s1;
+    /*   32 */ u64 s2;
+    /*   40 */ u64 s3;
+    /*   48 */ u64 s4;
+    /*   56 */ u64 s5;
+    /*   64 */ u64 s6;
+    /*   72 */ u64 s7;
+    /*   80 */ u64 s8;
+    /*   88 */ u64 s9;
+    /*   96 */ u64 s10;
+    /*  104 */ u64 s11;
 };
 
 // Per-CPU state
@@ -80,7 +80,7 @@ struct trapframe
     /* 264 */ u64 t4;
     /* 272 */ u64 t5;
     /* 280 */ u64 t6;
-}
+};
 
 enum procstate {
     UNUSED,
@@ -112,7 +112,7 @@ struct proc
     pagetable_t pagetable; // User page table
     struct trapframe *trapframe; // data page for trampoline.S
     struct context context;      // swtch() here to run process
-    // struct file **ofile[NOFILE]; // Open files
-    // struct inode *cwd;           // Current directory
-    // char name[16];               // Process name (debugging)
+    struct file **ofile[NOFILE]; // Open files
+    struct inode *cwd;           // Current directory
+    char name[16];               // Process name (debugging)
 };

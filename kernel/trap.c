@@ -1,6 +1,7 @@
 #include "riscv.h"
 #include "types.h"
 #include "memlayout.h"
+#include "proc.h"
 
 struct spinlock tickslock;
 u32 ticks;
@@ -118,4 +119,112 @@ void usertrapret(void)
     // and switches to user mode with sret.
     u64 fn = TRAMPOLINE + (userret - trampoline);
     ((void (*)(u64))fn)(satp);
+}
+
+// interrupts and exceptions from kernel code go here via kernelvec,
+// on whatever the current kernel stack is.
+void kerneltrap()
+{
+    int which_dev = 0;
+    u64 sepc = r_sepc();
+    u64 sstatus = r_sstatus();
+    u64 scause = r_scause();
+
+    if ((sstatus & SSTATUS_SPP) == 0)
+    {
+        panic("kerneltrap: not from supervisor mode");
+    }
+    if (intr_get() != 0)
+    {
+        panic("kerneltrap: interrupts enabled");
+    }
+
+    if ((which_dev = devintr()) == 0)
+    {
+        printf("scause %p\n", scause);
+        printf("sepc=%p stval=%p\n", r_epc(), r_stval());
+        panic("kerneltrap");
+    }
+
+    // give up the CPU if this is a timer interrupt.
+    if (which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING)
+    {
+        yield();
+    }
+
+    // the yield() may have caused some traps to occur,
+    // so restore trap registers for use by kernelvec.S's sepc instruction.
+    w_sepc(sepc);
+    w_sstatus(sstatus);
+}
+
+void clockintr()
+{
+    acquire(&tickslock);
+    ticks++;
+    wakeup(&ticks);
+    release(&tickslock);
+}
+
+// check if it's an external interrupt or software interrupt,
+// and handle it.
+// returns 2 if time interrupt,
+// 1 if other device,
+// 0 if not recognized
+int devintr()
+{
+    u64 scause = r_scause();
+
+    if ((scause & 0x8000000000000000L) && (scause & 0xff) == 9)
+    {
+        // this is a supervisor external interrupt, via PLIC.
+
+        // irq indicates which device interrupted.
+
+        // irq indicates which device interrupted.
+        int irq = plic_claim();
+
+        if (irq == UART0_IRQ)
+        {
+            uartintr();
+        }
+        else if (irq == VIRTIO0_IRQ)
+        {
+            virtio_disk_intr();
+        }
+        else if (irq)
+        {
+            printf("unexpected interrupt irq=%d\n", irq);
+        }
+
+        // the PLIC allows each device to raise at most one
+        // interrupt at a time; tell the PLIC the device is
+        // now allowed to interrupt again.
+        if (irq)
+        {
+            plic_complete(irq);
+        }
+
+        return 1;
+    }
+    else if (scause == 0x8000000000000001L)
+    {
+        // software interrupt fro a machine-mode time interrupt,
+        // forwarded by timervec in kernelvec.S.
+
+        if (cpuid() == 0)
+        {
+            clockintr();
+        }
+
+        // acknowledge the software interrupt by clearing
+        // the SSIP bit in sip
+        w_sip(r_sip() & ~2);
+
+        return 2;
+    }
+    else
+    {
+        return 0;
+    }
 }

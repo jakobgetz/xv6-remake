@@ -55,7 +55,7 @@ void start()
     w_tp(id);
 
     // switch to supervisor mode and jump to main().
-    // asm volatile("mret");
+    asm volatile("mret");
 }
 
 void timerinit()
